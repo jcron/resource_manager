@@ -1,0 +1,7 @@
+ebin
+*~
+.eunit
+*.swp
+.idea
+*.dump
+deps*~
