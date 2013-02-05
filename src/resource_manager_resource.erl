@@ -22,11 +22,11 @@ content_types_provided(ReqData, State) ->
 to_json(ReqData, State) ->
     try
         case wrq:path_info(action, ReqData) of
-            "checkout" -> Resources = rm_library:check_out_resource();
-            "checkin" -> Resources = rm_library:check_in_resource();
-            undefined -> Resources = rm_library:get_available_resources()
+            "checkout" -> Resources = rm_librarian:check_out_resource();
+            "checkin" -> Resources = rm_librarian:check_in_resource();
+            undefined -> Resources = rm_librarian:get_available_resources()
         end,
-        to_json(ReqData, State, [{totalResources, rm_library:get_total_resources()}, {availableResources, Resources}])
+        to_json(ReqData, State, [{totalResources, rm_librarian:get_total_resources()}, {availableResources, Resources}])
     catch
         no_resource -> to_json(ReqData, State, [{error, no_resource}]);
         _:_ -> to_json(ReqData, State, [{error, unknown_error}])

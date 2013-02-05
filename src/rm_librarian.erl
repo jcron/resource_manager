@@ -1,4 +1,4 @@
--module(rm_library).
+-module(rm_librarian).
 
 -export([check_out_resource/0, check_in_resource/0, get_available_resources/0, get_total_resources/0]).
 
