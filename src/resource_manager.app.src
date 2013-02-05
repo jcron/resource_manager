@@ -2,7 +2,7 @@
 {application, resource_manager,
  [
   {description, "resource_manager"},
-  {vsn, "1"},
+  {vsn, "0.0.1"},
   {modules, []},
   {registered, []},
   {applications, [
