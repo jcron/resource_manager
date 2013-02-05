@@ -16,3 +16,9 @@ find(Key) ->
         [{Key, Value}] -> {ok, Value};
         []             -> {error, not_found}
     end.
+
+find_all(Key) ->
+    case ets:match(?TABLE_ID, {{'$1', Key}, '_'}) of
+        []    -> {error, not_found};
+        Value -> Value
+    end.

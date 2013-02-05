@@ -14,7 +14,8 @@
 %% @doc application start callback for resource_manager.
 start(_Type, _StartArgs) ->
     rm_store:init(),
-    initialize_resources(),
+    initialize_resources("Sales"),
+    initialize_resources("Service"),
     resource_manager_sup:start_link().
 
 %% @spec stop(_State) -> ServerRet
@@ -22,10 +23,11 @@ start(_Type, _StartArgs) ->
 stop(_State) ->
     ok.
 
-initialize_resources() ->    
-    rm_store:insert(total_resources, 10),
-    {_, Available} = rm_store:find(total_resources),
-    rm_store:insert(available_resources, Available),
+initialize_resources(Segment) ->
+    rm_store:insert({Segment, total_resources}, 10),
+    {_, Available} = rm_store:find({Segment, total_resources}),
+    rm_store:insert({Segment, available_resources}, Available),
+    io:format("For ~p:~n", [Segment]),
     io:format("Total resources: ~p~n", [Available]),
     io:format("Available resources: ~p~n", [Available]),
     ok.
