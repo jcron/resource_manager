@@ -7,20 +7,18 @@
 -endif.
 
 check_out_resource(Segment) ->
-    {_, Available} = rm_store:find({Segment, available_resources}),
+    Available = rm_store:find({Segment, available_resources}),
     update_available_resources(Segment, get_total_resources(Segment), Available - 1).
 
 check_in_resource(Segment) ->    
-    {_, Available} = rm_store:find({Segment, available_resources}),
+    Available = rm_store:find({Segment, available_resources}),
     update_available_resources(Segment, get_total_resources(Segment), Available + 1).
 
 get_available_resources(Segment) ->
-    {_, Available} = rm_store:find({Segment, available_resources}),
-    Available.
+    rm_store:find({Segment, available_resources}).
 
 get_total_resources(Segment) ->
-    {_, Total} = rm_store:find({Segment, total_resources}),
-    Total.
+    rm_store:find({Segment, total_resources}).
 
 get_all_segments() ->
     rm_store:find_all(total_resources).
@@ -31,8 +29,7 @@ update_available_resources(_, Total, Resources) when Resources > Total ->
     throw(no_resource);
 update_available_resources(Segment, _, Resources) ->
     rm_store:insert({Segment, available_resources}, Resources),
-    {_, Available} = rm_store:find({Segment, available_resources}),
-    Available.
+    rm_store:find({Segment, available_resources}).
 
 %%
 %% Unit Tests
@@ -44,16 +41,17 @@ cannot_update_when_no_resources_left_test() ->
 
 cannot_update_when_resources_is_more_than_total_test() ->
     ?assertThrow(no_resource, update_available_resources("Sales", 1, 2)).
-
+    
 with_setup_of_storage_test_() ->
     {setup,
      fun setup/0,
+     fun cleanup/1,
      fun instantiator/1
     }.
 
 get_total_resources_returns_correct_count(Segment) ->
     ?assertEqual(1, get_total_resources(Segment)).
-
+    
 check_out_resource_decreases_count(Segment) ->
     ?assertEqual(0, check_out_resource(Segment)).
 
@@ -65,10 +63,10 @@ get_all_segments_returns_all_segments(Segment) ->
 
 setup() ->
     rm_store:init(),
-    Segment = "Sales",
-    rm_store:insert({Segment, total_resources}, 1),
-    rm_store:insert({Segment, available_resources}, 1),
-    Segment.
+    rm_store:initialize_segment("Sales", 1).
+
+cleanup(_) ->
+    rm_store:finalize().
 
 instantiator(Segment) ->
     {inorder,

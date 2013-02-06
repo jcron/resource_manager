@@ -30,7 +30,5 @@ initialize_resources() ->
 initialize_resources([], []) ->
     ok;
 initialize_resources([Segment | SegmentTail], [Resources | ResourcesTail]) ->
-    rm_store:insert({Segment, total_resources}, list_to_integer(Resources)),
-    {_, Available} = rm_store:find({Segment, total_resources}),
-    rm_store:insert({Segment, available_resources}, Available),
+    rm_store:initialize_segment(Segment, list_to_integer(Resources)),
     initialize_resources(SegmentTail, ResourcesTail).

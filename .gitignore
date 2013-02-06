@@ -5,3 +5,4 @@ ebin
 .idea
 *.dump
 deps*~
+*Mnesia*
