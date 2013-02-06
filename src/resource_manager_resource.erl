@@ -46,7 +46,7 @@ checkin_resource(ReqData, State) ->
     Resources = rm_librarian:check_in_resource(Segment),
     SegmentStruct = get_segment_json(Segment, Resources),
     to_json(ReqData, State, [{segments, SegmentStruct}]).
-    
+
 checkout_resource(ReqData, State) ->
     Segment = get_segment(ReqData),
     Resources = rm_librarian:check_out_resource(Segment),
@@ -54,28 +54,29 @@ checkout_resource(ReqData, State) ->
     to_json(ReqData, State, [{segments, SegmentStruct}]).    
 
 get_segment(ReqData) ->
-    wrq:get_qs_value("Segment", ReqData).    
-    
+    wrq:get_qs_value("Segment", ReqData).
+
 get_segment_json(Segment, Resources) ->
     [{name, iolist_to_binary(Segment)}, {totalResources, rm_librarian:get_total_resources(Segment)}, {availableResources, Resources}].
-    
+
 get_segments_json([], JsonStruct) ->
     JsonStruct;
 get_segments_json([Segment | Segments], JsonStruct) ->
     get_segments_json(Segment, Segments, JsonStruct).
-    
+
 get_segments_json([Segment | _], Segments, JsonStruct) ->
     Resources = rm_librarian:get_available_resources(Segment),
     get_segments_json(Segments, [get_segment_json(Segment, Resources) | JsonStruct]).
-    
+
 to_json(ReqData, State, Json) ->
     {mochijson2:encode(Json), ReqData, State}.
+
 %%
 %% Unit Tests
 %%
 -ifdef(EUNIT).
 
-allowed_methods_test() -> {['GET'],reqdata,state} = allowed_methods(reqdata,state).
-content_types_provided_test() -> {[{"application/json",to_json}],reqdata,state} = content_types_provided(reqdata,state).
+allowed_methods_test() -> {['GET'],reqdata,state} = allowed_methods(reqdata, state).
+content_types_provided_test() -> {[{"application/json", to_json}], reqdata, state} = content_types_provided(reqdata, state).
     
 -endif.

@@ -9,19 +9,19 @@
 check_out_resource(Segment) ->
     {_, Available} = rm_store:find({Segment, available_resources}),
     update_available_resources(Segment, get_total_resources(Segment), Available - 1).
-    
+
 check_in_resource(Segment) ->    
     {_, Available} = rm_store:find({Segment, available_resources}),
     update_available_resources(Segment, get_total_resources(Segment), Available + 1).
-    
+
 get_available_resources(Segment) ->
     {_, Available} = rm_store:find({Segment, available_resources}),
     Available.
-    
+
 get_total_resources(Segment) ->
     {_, Total} = rm_store:find({Segment, total_resources}),
     Total.
-    
+
 get_all_segments() ->
     rm_store:find_all(total_resources).
 
@@ -50,13 +50,13 @@ with_setup_of_storage_test_() ->
      fun setup/0,
      fun instantiator/1
     }.
-    
+
 get_total_resources_returns_correct_count(Segment) ->
     ?assertEqual(1, get_total_resources(Segment)).
 
 check_out_resource_decreases_count(Segment) ->
     ?assertEqual(0, check_out_resource(Segment)).
-    
+
 check_in_resource_increases_count(Segment) ->
     ?assertEqual(1, check_in_resource(Segment)).
 
@@ -77,5 +77,5 @@ instantiator(Segment) ->
          ?_test(check_in_resource_increases_count(Segment)),
          ?_test(get_all_segments_returns_all_segments(Segment))]
     }.
-    
+
 -endif.
