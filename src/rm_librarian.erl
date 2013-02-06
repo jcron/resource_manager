@@ -1,6 +1,6 @@
 -module(rm_librarian).
 
--export([check_out_resource/1, check_in_resource/1, get_available_resources/1, get_total_resources/1]).
+-export([check_out_resource/1, check_in_resource/1, get_available_resources/1, get_total_resources/1, get_all_segments/0]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -60,6 +60,9 @@ check_out_resource_decreases_count(Segment) ->
 check_in_resource_increases_count(Segment) ->
     ?assertEqual(1, check_in_resource(Segment)).
 
+get_all_segments_returns_all_segments(Segment) ->
+    ?assertEqual([[Segment]], get_all_segments()).
+
 setup() ->
     rm_store:init(),
     Segment = "Sales",
@@ -71,7 +74,8 @@ instantiator(Segment) ->
     {inorder,
         [?_test(get_total_resources_returns_correct_count(Segment)),
          ?_test(check_out_resource_decreases_count(Segment)),
-         ?_test(check_in_resource_increases_count(Segment))]
+         ?_test(check_in_resource_increases_count(Segment)),
+         ?_test(get_all_segments_returns_all_segments(Segment))]
     }.
     
 -endif.

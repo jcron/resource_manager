@@ -27,37 +27,36 @@ to_json(ReqData, State) ->
         case wrq:path_info(action, ReqData) of
             "checkout" ->
                 Resources = rm_librarian:check_out_resource(Segment),
-                get_segment_json(ReqData, State, Segment, Resources);
+                SegmentStruct = get_segment_json(Segment, Resources),
+                to_json(ReqData, State, [{segments, SegmentStruct}]);
             "checkin" ->
                 Resources = rm_librarian:check_in_resource(Segment),
-                get_segment_json(ReqData, State, Segment, Resources);
+                SegmentStruct = get_segment_json(Segment, Resources),
+                to_json(ReqData, State, [{segments, SegmentStruct}]);
             undefined ->
-                Resources = rm_librarian:get_available_resources(Segment),
-                get_segment_json(ReqData, State, Segment, Resources)
+                Segments = rm_librarian:get_all_segments(),
+                SegmentStruct = get_segments_json(Segments, []),
+                to_json(ReqData, State, [{segments, SegmentStruct}])
         end
     catch
-        no_resource -> to_json(ReqData, State, {struct, [{error, no_resource}]});
-        _:_ -> to_json(ReqData, State, {struct, [{error, unknown_error}]})
+        no_resource -> to_json(ReqData, State, [{error, no_resource}]);
+        _:_ -> to_json(ReqData, State, [{error, unknown_error}])
     end.
     
-to_json(ReqData, State, Struct) ->
-    {mochijson2:encode(Struct), ReqData, State}.
+to_json(ReqData, State, Json) ->
+    {mochijson2:encode(Json), ReqData, State}.
     
-%get_segment_json(ReqData, State, Resources) ->
-%    Segments = rm_librarian:get_all_segments(),
-%    get_segment_json(ReqData, State, Segments, Resources)
-%    SegmentStruct = {struct, [{name, iolist_to_binary(Segment)}, {totalResources, rm_librarian:get_total_resources(Segment)}, {availableResources, Resources}]},
-%    to_json(ReqData, State, {struct, [{segments, SegmentStruct}]}).
-
-%get_segment_json(ReqData, State, [], Resources, Json) ->
-%    {struct, [Json]}
-%get_segment_json(ReqData, State, [Segment|Segments], Resources, Json) ->
-%    NewJson = {struct, []},
-%    get_segment_json(ReqData, State, Segments, Resources, Json);
+get_segments_json([], JsonStruct) ->
+    JsonStruct;
+get_segments_json([Segment | Segments], JsonStruct) ->
+    get_segments_json(Segment, Segments, JsonStruct).
     
-get_segment_json(ReqData, State, Segment, Resources) ->
-    SegmentStruct = {struct, [{name, iolist_to_binary(Segment)}, {totalResources, rm_librarian:get_total_resources(Segment)}, {availableResources, Resources}]},
-    to_json(ReqData, State, {struct, [{segments, SegmentStruct}]}).
+get_segments_json([Segment | _], Segments, JsonStruct) ->
+    Resources = rm_librarian:get_available_resources(Segment),
+    get_segments_json(Segments, [get_segment_json(Segment, Resources) | JsonStruct]).
+    
+get_segment_json(Segment, Resources) ->
+    [{name, iolist_to_binary(Segment)}, {totalResources, rm_librarian:get_total_resources(Segment)}, {availableResources, Resources}].
 
 %%
 %% Unit Tests

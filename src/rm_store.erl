@@ -1,6 +1,6 @@
 -module(rm_store).
 
--export([init/0, insert/2, find/1]).
+-export([init/0, insert/2, find/1, find_all/1]).
 
 -define(TABLE_ID, resources).
 
@@ -19,6 +19,6 @@ find(Key) ->
 
 find_all(Key) ->
     case ets:match(?TABLE_ID, {{'$1', Key}, '_'}) of
-        []    -> {error, not_found};
-        Value -> Value
+        []      -> {error, not_found};
+        Value   -> Value
     end.
