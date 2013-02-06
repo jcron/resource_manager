@@ -22,29 +22,42 @@ content_types_provided(ReqData, State) ->
     {[{"application/json",to_json}], ReqData, State}.
 
 to_json(ReqData, State) ->
-    Segment = "Sales",
     try
         case wrq:path_info(action, ReqData) of
             "checkout" ->
-                Resources = rm_librarian:check_out_resource(Segment),
-                SegmentStruct = get_segment_json(Segment, Resources),
-                to_json(ReqData, State, [{segments, SegmentStruct}]);
+                checkout_resource(ReqData, State);
             "checkin" ->
-                Resources = rm_librarian:check_in_resource(Segment),
-                SegmentStruct = get_segment_json(Segment, Resources),
-                to_json(ReqData, State, [{segments, SegmentStruct}]);
+                checkin_resource(ReqData, State);
             undefined ->
-                Segments = rm_librarian:get_all_segments(),
-                SegmentStruct = get_segments_json(Segments, []),
-                to_json(ReqData, State, [{segments, SegmentStruct}])
+                all_resources(ReqData, State)
         end
     catch
         no_resource -> to_json(ReqData, State, [{error, no_resource}]);
         _:_ -> to_json(ReqData, State, [{error, unknown_error}])
     end.
+
+all_resources(ReqData, State) ->
+    Segments = rm_librarian:get_all_segments(),
+    SegmentStruct = get_segments_json(Segments, []),
+    to_json(ReqData, State, [{segments, SegmentStruct}]).
+
+checkin_resource(ReqData, State) ->
+    Segment = get_segment(ReqData),
+    Resources = rm_librarian:check_in_resource(Segment),
+    SegmentStruct = get_segment_json(Segment, Resources),
+    to_json(ReqData, State, [{segments, SegmentStruct}]).
     
-to_json(ReqData, State, Json) ->
-    {mochijson2:encode(Json), ReqData, State}.
+checkout_resource(ReqData, State) ->
+    Segment = get_segment(ReqData),
+    Resources = rm_librarian:check_out_resource(Segment),
+    SegmentStruct = get_segment_json(Segment, Resources),
+    to_json(ReqData, State, [{segments, SegmentStruct}]).    
+
+get_segment(ReqData) ->
+    wrq:get_qs_value("Segment", ReqData).    
+    
+get_segment_json(Segment, Resources) ->
+    [{name, iolist_to_binary(Segment)}, {totalResources, rm_librarian:get_total_resources(Segment)}, {availableResources, Resources}].
     
 get_segments_json([], JsonStruct) ->
     JsonStruct;
@@ -55,9 +68,8 @@ get_segments_json([Segment | _], Segments, JsonStruct) ->
     Resources = rm_librarian:get_available_resources(Segment),
     get_segments_json(Segments, [get_segment_json(Segment, Resources) | JsonStruct]).
     
-get_segment_json(Segment, Resources) ->
-    [{name, iolist_to_binary(Segment)}, {totalResources, rm_librarian:get_total_resources(Segment)}, {availableResources, Resources}].
-
+to_json(ReqData, State, Json) ->
+    {mochijson2:encode(Json), ReqData, State}.
 %%
 %% Unit Tests
 %%
