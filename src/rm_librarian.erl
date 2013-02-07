@@ -59,7 +59,7 @@ check_in_resource_increases_count(Segment) ->
     ?assertEqual(1, check_in_resource(Segment)).
 
 get_all_segments_returns_all_segments(Segment) ->
-    ?assertEqual([[Segment]], get_all_segments()).
+    ?assertEqual([Segment], get_all_segments()).
 
 setup() ->
     rm_store:init(),

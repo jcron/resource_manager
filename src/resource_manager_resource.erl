@@ -44,7 +44,7 @@ show_resources(ReqData, State) ->
     case get_segment(ReqData) of
         undefined -> all_resources(ReqData, State);
         Segment ->
-            SegmentStruct = get_segments_json([[Segment]], []),
+            SegmentStruct = get_segments_json([Segment], []),
             to_json(ReqData, State, [{segments, SegmentStruct}])
     end.
 
@@ -74,9 +74,6 @@ get_segment_json(Segment, Resources) ->
 get_segments_json([], JsonStruct) ->
     JsonStruct;
 get_segments_json([Segment | Segments], JsonStruct) ->
-    get_segments_json(Segment, Segments, JsonStruct).
-
-get_segments_json([Segment | _], Segments, JsonStruct) ->
     Resources = rm_librarian:get_available_resources(Segment),
     get_segments_json(Segments, [get_segment_json(Segment, Resources) | JsonStruct]).
 

@@ -39,7 +39,7 @@ find_all(Key) ->
         mnesia:match_object(?TABLE_ID, {?RESOURCE_RECORD, {'_', Key}, '_'}, read)
     end,
     { atomic, Results } = mnesia:transaction(Read_fun),
-    [[get_segment_from_record(Result)] || Result <- Results]. %we don't really need the extra [] but will require refactoring resource_manager_resource all_resources
+    [get_segment_from_record(Result) || Result <- Results].
 
 finalize() ->
     mnesia:stop().
