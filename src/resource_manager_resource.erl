@@ -29,11 +29,19 @@ to_json(ReqData, State) ->
             "checkin" ->
                 checkin_resource(ReqData, State);
             undefined ->
-                all_resources(ReqData, State)
+                show_resources(ReqData, State)
         end
     catch
         no_resource -> to_json(ReqData, State, [{error, no_resource}]);
         _:_ -> to_json(ReqData, State, [{error, unknown_error}])
+    end.
+
+show_resources(ReqData, State) ->    
+    case get_segment(ReqData) of
+        undefined -> all_resources(ReqData, State);
+        Segment ->
+            SegmentStruct = get_segments_json([[Segment]], []),
+            to_json(ReqData, State, [{segments, SegmentStruct}])
     end.
 
 all_resources(ReqData, State) ->
