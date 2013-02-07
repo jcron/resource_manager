@@ -62,7 +62,7 @@ checkout_resource(ReqData, State) ->
     to_json(ReqData, State, [{segments, SegmentStruct}]).    
 
 get_segment(ReqData) ->
-    wrq:get_qs_value("Segment", ReqData).
+    wrq:get_qs_value("segment", ReqData).
 
 get_segment_json(Segment, Resources) ->
     [{name, iolist_to_binary(Segment)}, {totalResources, rm_librarian:get_total_resources(Segment)}, {availableResources, Resources}].
