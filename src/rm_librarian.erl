@@ -1,6 +1,11 @@
 -module(rm_librarian).
 
--export([check_out_resource/1, check_in_resource/1, get_available_resources/1, get_total_resources/1, get_all_segments/0]).
+-export([check_out_resource/1,
+         check_in_resource/1,
+         get_all_segments/0,
+         get_available_resources/1,
+         get_total_resources/1
+        ]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -14,15 +19,16 @@ check_in_resource(Segment) ->
     Available = rm_store:find({Segment, available_resources}),
     update_available_resources(Segment, get_total_resources(Segment), Available + 1).
 
+get_all_segments() ->
+    rm_store:find_all(total_resources).
+
 get_available_resources(Segment) ->
     rm_store:find({Segment, available_resources}).
 
 get_total_resources(Segment) ->
     rm_store:find({Segment, total_resources}).
 
-get_all_segments() ->
-    rm_store:find_all(total_resources).
-
+%%% Local Functions
 update_available_resources(_, _, Resources) when Resources < 0 ->
     throw(no_resource);
 update_available_resources(_, Total, Resources) when Resources > Total ->

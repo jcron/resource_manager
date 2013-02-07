@@ -4,7 +4,11 @@
 
 -module(resource_manager_resource).
 
--export([init/1, allowed_methods/2, content_types_provided/2, to_json/2]).
+-export([init/1,
+         allowed_methods/2,
+         content_types_provided/2,
+         to_json/2
+        ]).
 
 -include_lib("webmachine/include/webmachine.hrl").
 
@@ -37,21 +41,14 @@ to_json(ReqData, State) ->
         _:_ -> to_json(ReqData, State, [{error, unknown_error}])
     end.
 
-bad_request(ReqData, State) ->
-    to_json(ReqData, State, [{error, bad_request}]).
-
-show_resources(ReqData, State) ->    
-    case get_segment(ReqData) of
-        undefined -> all_resources(ReqData, State);
-        Segment ->
-            SegmentStruct = get_segments_json([Segment], []),
-            to_json(ReqData, State, [{segments, SegmentStruct}])
-    end.
-
+%%% Local Functions
 all_resources(ReqData, State) ->
     Segments = rm_librarian:get_all_segments(),
     SegmentStruct = get_segments_json(Segments, []),
     to_json(ReqData, State, [{segments, SegmentStruct}]).
+    
+bad_request(ReqData, State) ->
+    to_json(ReqData, State, [{error, bad_request}]).
 
 checkin_resource(ReqData, State) ->
     Segment = get_segment(ReqData),
@@ -76,6 +73,14 @@ get_segments_json([], JsonStruct) ->
 get_segments_json([Segment | Segments], JsonStruct) ->
     Resources = rm_librarian:get_available_resources(Segment),
     get_segments_json(Segments, [get_segment_json(Segment, Resources) | JsonStruct]).
+
+show_resources(ReqData, State) ->    
+    case get_segment(ReqData) of
+        undefined -> all_resources(ReqData, State);
+        Segment ->
+            SegmentStruct = get_segments_json([Segment], []),
+            to_json(ReqData, State, [{segments, SegmentStruct}])
+    end.
 
 to_json(ReqData, State, Json) ->
     {mochijson2:encode(Json), ReqData, State}.

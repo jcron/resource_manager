@@ -22,6 +22,7 @@ start(_Type, _StartArgs) ->
 stop(_State) ->
     ok.
 
+%%% Local Functions
 initialize_resources([]) ->
     ok;
 initialize_resources([{Segment, Total} | RestOfResources]) ->
