@@ -14,7 +14,7 @@
 %% @doc application start callback for resource_manager.
 start(_Type, _StartArgs) ->
     rm_store:init(),
-    initialize_resources(),
+    initialize_resources_from_config(),
     resource_manager_sup:start_link().
 
 %% @spec stop(_State) -> ServerRet
@@ -22,13 +22,13 @@ start(_Type, _StartArgs) ->
 stop(_State) ->
     ok.
 
-initialize_resources() ->
-    {_, Segments} = application:get_env(resource_manager, segments),
-    {_, TotalResources} = application:get_env(resource_manager, total_resources),
-    initialize_resources(Segments, TotalResources).
-    
-initialize_resources([], []) ->
+%%% Local Functions
+initialize_resources([]) ->
     ok;
-initialize_resources([Segment | SegmentTail], [Resources | ResourcesTail]) ->
-    rm_store:initialize_segment(Segment, list_to_integer(Resources)),
-    initialize_resources(SegmentTail, ResourcesTail).
+initialize_resources([{Segment, Total} | RestOfResources]) ->
+    rm_store:initialize_segment(Segment, Total),
+    initialize_resources(RestOfResources).
+
+initialize_resources_from_config() ->
+    {_, Resources} = application:get_env(resource_manager, resources),
+    initialize_resources(Resources).
