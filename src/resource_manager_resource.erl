@@ -31,11 +31,9 @@ content_types_provided(ReqData, State) ->
     {[{"application/json", to_json}], ReqData, State}.
 
 from_json(ReqData, State) ->
-    Body = wrq:req_body(ReqData),
     Action = wrq:path_info(action, ReqData),
     try
-        {struct, Json} = mochijson2:decode(Body),
-        Segment = binary_to_list(proplists:get_value(<<"segment">>, Json)),
+        Segment = get_segment(ReqData),
         case Action of
             "checkout" -> checkout_resource(ReqData, State, Segment);
             "checkin"  -> checkin_resource(ReqData, State, Segment);
@@ -48,12 +46,6 @@ from_json(ReqData, State) ->
     
 to_json(ReqData, State) ->
     show_resources(ReqData, State).
-
-json_response(ReqData, State, Resources) ->
- 	ReturnIo = mochijson2:encode(Resources),
- 	ReturnJson = iolist_to_binary(ReturnIo),
- 	R2 = wrq:append_to_resp_body(ReturnJson, ReqData),
-	{true, R2, State}.
 
 %%% Local Functions
 all_resources(ReqData, State) ->
@@ -75,7 +67,14 @@ checkout_resource(ReqData, State, Segment) ->
     json_response(ReqData, State, [{segments, SegmentStruct}]).    
 
 get_segment(ReqData) ->
-    wrq:get_qs_value("segment", ReqData). % change this to json value
+    get_segment(ReqData, wrq:method(ReqData)).
+    
+get_segment(ReqData, 'GET') ->
+    wrq:get_qs_value("segment", ReqData);
+get_segment(ReqData, 'PUT') ->
+    Body = wrq:req_body(ReqData),
+    {struct, Json} = mochijson2:decode(Body),
+    binary_to_list(proplists:get_value(<<"segment">>, Json)).
 
 get_segment_json(Segment, Resources) ->
     [{name, iolist_to_binary(Segment)}, {totalResources, rm_librarian:get_total_resources(Segment)}, {availableResources, Resources}].
@@ -86,7 +85,13 @@ get_segments_json([Segment | Segments], JsonStruct) ->
     Resources = rm_librarian:get_available_resources(Segment),
     get_segments_json(Segments, [get_segment_json(Segment, Resources) | JsonStruct]).
 
-show_resources(ReqData, State) ->    
+json_response(ReqData, State, Response) ->
+    ReturnIo = mochijson2:encode(Response),
+    ReturnJson = iolist_to_binary(ReturnIo),
+    R2 = wrq:append_to_resp_body(ReturnJson, ReqData),
+    {true, R2, State}.
+    
+show_resources(ReqData, State) ->
     case get_segment(ReqData) of
         undefined -> all_resources(ReqData, State);
         Segment ->
