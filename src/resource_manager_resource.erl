@@ -6,7 +6,9 @@
 
 -export([init/1,
          allowed_methods/2,
+         content_types_accepted/2,
          content_types_provided/2,
+         from_json/2,
          to_json/2
         ]).
 
@@ -20,26 +22,38 @@ init([]) ->
     {ok, undefined}.
 
 allowed_methods(ReqData, State) -> 
-    {[ 'GET' ], ReqData, State }.
+    {[ 'GET', 'PUT' ], ReqData, State }.
 
+content_types_accepted(ReqData, State) ->
+    {[{"application/json", from_json}], ReqData, State}.
+    
 content_types_provided(ReqData, State) ->
-    {[{"application/json",to_json}], ReqData, State}.
+    {[{"application/json", to_json}], ReqData, State}.
 
-to_json(ReqData, State) ->
+from_json(ReqData, State) ->
+    Body = wrq:req_body(ReqData),
+    Action = wrq:path_info(action, ReqData),
     try
-        case wrq:path_info(action, ReqData) of
-            "checkout" ->
-                checkout_resource(ReqData, State);
-            "checkin" ->
-                checkin_resource(ReqData, State);
-            undefined ->
-                show_resources(ReqData, State);
-            _ -> bad_request(ReqData, State)
+        {struct, Json} = mochijson2:decode(Body),
+        Segment = binary_to_list(proplists:get_value(<<"segment">>, Json)),
+        case Action of
+            "checkout" -> checkout_resource(ReqData, State, Segment);
+            "checkin"  -> checkin_resource(ReqData, State, Segment);
+            _          -> bad_request(ReqData, State)
         end
     catch
-        no_resource -> to_json(ReqData, State, [{error, no_resource}]);
-        _:_ -> to_json(ReqData, State, [{error, unknown_error}])
+        no_resource -> json_response(ReqData, State, [{error, no_resource}]);
+        _Error:_Reason -> {false, ReqData, State}
     end.
+    
+to_json(ReqData, State) ->
+    show_resources(ReqData, State).
+
+json_response(ReqData, State, Resources) ->
+ 	ReturnIo = mochijson2:encode(Resources),
+ 	ReturnJson = iolist_to_binary(ReturnIo),
+ 	R2 = wrq:append_to_resp_body(ReturnJson, ReqData),
+	{true, R2, State}.
 
 %%% Local Functions
 all_resources(ReqData, State) ->
@@ -48,22 +62,20 @@ all_resources(ReqData, State) ->
     to_json(ReqData, State, [{segments, SegmentStruct}]).
     
 bad_request(ReqData, State) ->
-    to_json(ReqData, State, [{error, bad_request}]).
+    json_response(ReqData, State, [{error, bad_request}]).
 
-checkin_resource(ReqData, State) ->
-    Segment = get_segment(ReqData),
+checkin_resource(ReqData, State, Segment) ->
     Resources = rm_librarian:check_in_resource(Segment),
     SegmentStruct = get_segment_json(Segment, Resources),
-    to_json(ReqData, State, [{segments, SegmentStruct}]).
+    json_response(ReqData, State, [{segments, SegmentStruct}]).
 
-checkout_resource(ReqData, State) ->
-    Segment = get_segment(ReqData),
+checkout_resource(ReqData, State, Segment) ->
     Resources = rm_librarian:check_out_resource(Segment),
     SegmentStruct = get_segment_json(Segment, Resources),
-    to_json(ReqData, State, [{segments, SegmentStruct}]).    
+    json_response(ReqData, State, [{segments, SegmentStruct}]).    
 
 get_segment(ReqData) ->
-    wrq:get_qs_value("segment", ReqData).
+    wrq:get_qs_value("segment", ReqData). % change this to json value
 
 get_segment_json(Segment, Resources) ->
     [{name, iolist_to_binary(Segment)}, {totalResources, rm_librarian:get_total_resources(Segment)}, {availableResources, Resources}].
@@ -90,7 +102,7 @@ to_json(ReqData, State, Json) ->
 %%
 -ifdef(EUNIT).
 
-allowed_methods_test() -> {['GET'],reqdata,state} = allowed_methods(reqdata, state).
+allowed_methods_test() -> {['GET', 'PUT'], reqdata, state} = allowed_methods(reqdata, state).
 content_types_provided_test() -> {[{"application/json", to_json}], reqdata, state} = content_types_provided(reqdata, state).
     
 -endif.
