@@ -6,3 +6,4 @@ ebin
 *.dump
 deps*~
 *Mnesia*
+*.beam
