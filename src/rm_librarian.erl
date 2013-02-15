@@ -35,7 +35,7 @@ update_available_resources(_, Total, Resources) when Resources > Total ->
     throw(no_resource);
 update_available_resources(Segment, _, Resources) ->
     rm_store:insert({Segment, available_resources}, Resources),
-    rm_store:find({Segment, available_resources}).
+    {rm_store:find({Segment, total_resources}), rm_store:find({Segment, available_resources})}.
 
 %%
 %% Unit Tests
@@ -59,10 +59,10 @@ get_total_resources_returns_correct_count(Segment) ->
     ?assertEqual(1, get_total_resources(Segment)).
     
 check_out_resource_decreases_count(Segment) ->
-    ?assertEqual(0, check_out_resource(Segment)).
+    ?assertEqual({1, 0}, check_out_resource(Segment)).
 
 check_in_resource_increases_count(Segment) ->
-    ?assertEqual(1, check_in_resource(Segment)).
+    ?assertEqual({1, 1}, check_in_resource(Segment)).
 
 get_all_segments_returns_all_segments(Segment) ->
     ?assertEqual([Segment], get_all_segments()).
