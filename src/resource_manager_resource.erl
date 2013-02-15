@@ -37,11 +37,11 @@ from_json(ReqData, State) ->
         Conversation = get_conversation(ReqData),
         case Action of
             "checkout" -> checkout_resource(ReqData, State, Segment, Conversation);
-            "checkin"  -> checkin_resource(ReqData, State, Segment, Conversation);
-            _          -> bad_request(ReqData, State)
+            "checkin"   -> checkin_resource(ReqData, State, Segment, Conversation);
+            _              -> bad_request(ReqData, State)
         end
     catch
-        no_resource -> json_response(ReqData, State, rm_json:error(no_resource));
+        no_resource -> no_resource(ReqData, State);
         _Error:_Reason -> {false, ReqData, State}
     end.
     
@@ -98,7 +98,10 @@ json_response(ReqData, State, Response) ->
     ReturnJson = iolist_to_binary(ReturnIo),
     R2 = wrq:append_to_resp_body(ReturnJson, ReqData),
     {true, R2, State}.
-    
+
+no_resource(ReqData, State) ->
+    json_response(ReqData, State, rm_json:error(no_resource)).
+
 show_resources(ReqData, State) ->
     case get_segment(ReqData) of
         undefined -> all_resources(ReqData, State);
