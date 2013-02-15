@@ -33,9 +33,9 @@ update_available_resources(_, _, Resources) when Resources < 0 ->
     throw(no_resource);
 update_available_resources(_, Total, Resources) when Resources > Total ->
     throw(no_resource);
-update_available_resources(Segment, _, Resources) ->
+update_available_resources(Segment, Total, Resources) ->
     rm_store:insert({Segment, available_resources}, Resources),
-    {rm_store:find({Segment, total_resources}), rm_store:find({Segment, available_resources})}.
+    {Total, rm_store:find({Segment, available_resources})}.
 
 %%
 %% Unit Tests
