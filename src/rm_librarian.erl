@@ -11,6 +11,8 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
+check_out_resource(_, []) ->
+    throw(no_resource);
 check_out_resource(Segment, Conversation) ->
     Available = rm_store:find({Segment, available_resources}),
     case rm_store:conversation_exists(Conversation, available_resources) of
@@ -20,9 +22,11 @@ check_out_resource(Segment, Conversation) ->
             update_available_resources(Segment, get_total_resources(Segment), Available - 1)
     end.    
 
-check_in_resource(Segment, Conversation) ->    
+check_in_resource(_, []) ->
+    throw(no_resource);
+check_in_resource(Segment, Conversation) ->
     Available = rm_store:find({Segment, available_resources}),
-        case rm_store:conversation_exists(Conversation, available_resources) of
+    case rm_store:conversation_exists(Conversation, available_resources) of
         true  ->
             rm_store:remove_conversation(Conversation),
             update_available_resources(Segment, get_total_resources(Segment), Available + 1);
@@ -67,13 +71,19 @@ with_setup_of_storage_test_() ->
 
 get_total_resources_returns_correct_count(Segment) ->
     ?assertEqual(1, get_total_resources(Segment)).
-    
+
+check_out_needs_a_conversation(Segment) ->
+    ?assertThrow(no_resource, check_out_resource(Segment, [])).
+
 check_out_resource_decreases_count(Segment) ->
     ?assertEqual({1, 0}, check_out_resource(Segment, "id")).
 
 check_out_only_allows_one_resource_per_id(Segment) ->
     ?assertThrow(no_resource, check_out_resource(Segment, "id")).
 
+check_in_needs_a_conversation(Segment) ->
+    ?assertThrow(no_resource, check_in_resource(Segment, [])).
+    
 check_in_resource_increases_count(Segment) ->
     ?assertEqual({1, 1}, check_in_resource(Segment, "id")).
 
@@ -93,8 +103,10 @@ cleanup(_) ->
 instantiator(Segment) ->
     {inorder,
         [?_test(get_total_resources_returns_correct_count(Segment)),
+         ?_test(check_out_needs_a_conversation(Segment)),
          ?_test(check_out_resource_decreases_count(Segment)),
          ?_test(check_out_only_allows_one_resource_per_id(Segment)),
+         ?_test(check_in_needs_a_conversation(Segment)),
          ?_test(check_in_resource_increases_count(Segment)),
          ?_test(check_in_resource_needs_id_already_checked_out(Segment)),
          ?_test(get_all_segments_returns_all_segments(Segment))]
