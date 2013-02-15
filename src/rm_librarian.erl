@@ -1,23 +1,23 @@
 -module(rm_librarian).
 
--export([check_out_resource/1,
-         check_in_resource/1,
-         get_all_segments/0,
-         get_available_resources/1,
-         get_total_resources/1
-        ]).
+-export([check_out_resource/2,
+             check_in_resource/2,
+             get_all_segments/0,
+             get_available_resources/1,
+             get_total_resources/1
+            ]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
-check_out_resource(Segment) ->
+check_out_resource(Segment, Conversation) ->
     Available = rm_store:find({Segment, available_resources}),
-    update_available_resources(Segment, get_total_resources(Segment), Available - 1).
+    update_available_resources(Segment, Conversation, get_total_resources(Segment), Available - 1).
 
-check_in_resource(Segment) ->    
+check_in_resource(Segment, Conversation) ->    
     Available = rm_store:find({Segment, available_resources}),
-    update_available_resources(Segment, get_total_resources(Segment), Available + 1).
+    update_available_resources(Segment, Conversation, get_total_resources(Segment), Available + 1).
 
 get_all_segments() ->
     rm_store:find_all(total_resources).
@@ -29,12 +29,13 @@ get_total_resources(Segment) ->
     rm_store:find({Segment, total_resources}).
 
 %%% Local Functions
-update_available_resources(_, _, Resources) when Resources < 0 ->
+update_available_resources(_, _, _, Resources) when Resources < 0 ->
     throw(no_resource);
-update_available_resources(_, Total, Resources) when Resources > Total ->
+update_available_resources(_, _, Total, Resources) when Resources > Total ->
     throw(no_resource);
-update_available_resources(Segment, _, Resources) ->
-    rm_store:insert({Segment, available_resources}, Resources),
+update_available_resources(Segment, Conversation, _, Resources) ->
+    rm:store:find_conversation(Conversation, available_resources)
+    rm_store:insert({Segment, available_resources}, Resources, Conversation),
     {rm_store:find({Segment, total_resources}), rm_store:find({Segment, available_resources})}.
 
 %%
@@ -43,10 +44,10 @@ update_available_resources(Segment, _, Resources) ->
 -ifdef(EUNIT).
 
 cannot_update_when_no_resources_left_test() ->
-    ?assertThrow(no_resource, update_available_resources("Sales", 0, -1)).
+    ?assertThrow(no_resource, update_available_resources("Sales", "id", 0, -1)).
 
 cannot_update_when_resources_is_more_than_total_test() ->
-    ?assertThrow(no_resource, update_available_resources("Sales", 1, 2)).
+    ?assertThrow(no_resource, update_available_resources("Sales", "id", 1, 2)).
     
 with_setup_of_storage_test_() ->
     {setup,
@@ -59,10 +60,10 @@ get_total_resources_returns_correct_count(Segment) ->
     ?assertEqual(1, get_total_resources(Segment)).
     
 check_out_resource_decreases_count(Segment) ->
-    ?assertEqual({1, 0}, check_out_resource(Segment)).
+    ?assertEqual({1, 0}, check_out_resource(Segment, "id")).
 
 check_in_resource_increases_count(Segment) ->
-    ?assertEqual({1, 1}, check_in_resource(Segment)).
+    ?assertEqual({1, 1}, check_in_resource(Segment, "id")).
 
 get_all_segments_returns_all_segments(Segment) ->
     ?assertEqual([Segment], get_all_segments()).

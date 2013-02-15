@@ -31,13 +31,13 @@ content_types_provided(ReqData, State) ->
     {[{"application/json", to_json}], ReqData, State}.
 
 from_json(ReqData, State) ->
-    Action = wrq:path_info(action, ReqData),
     try
+        Action = wrq:path_info(action, ReqData),
         Segment = get_segment(ReqData),
         Conversation = get_conversation(ReqData),
         case Action of
-            "checkout" -> checkout_resource(ReqData, State, Segment);
-            "checkin"  -> checkin_resource(ReqData, State, Segment);
+            "checkout" -> checkout_resource(ReqData, State, Segment, Conversation);
+            "checkin"  -> checkin_resource(ReqData, State, Segment, Conversation);
             _          -> bad_request(ReqData, State)
         end
     catch
@@ -57,13 +57,13 @@ all_resources(ReqData, State) ->
 bad_request(ReqData, State) ->
     json_response(ReqData, State, rm_json:error(bad_request)).
 
-checkin_resource(ReqData, State, Segment) ->
-    {Total, Available} = rm_librarian:check_in_resource(Segment),
+checkin_resource(ReqData, State, Segment, Conversation) ->
+    {Total, Available} = rm_librarian:check_in_resource(Segment, Conversation),
     SegmentStruct = rm_json:segment_detail(Segment, Total, Available),
     json_response(ReqData, State, rm_json:segments(SegmentStruct)).
 
-checkout_resource(ReqData, State, Segment) ->
-    {Total, Available} = rm_librarian:check_out_resource(Segment),
+checkout_resource(ReqData, State, Segment, Conversation) ->
+    {Total, Available} = rm_librarian:check_out_resource(Segment, Conversation),
     SegmentStruct = rm_json:segment_detail(Segment, Total, Available),
     json_response(ReqData, State, rm_json:segments(SegmentStruct)).    
 
