@@ -58,12 +58,12 @@ bad_request(ReqData, State) ->
 
 checkin_resource(ReqData, State, Segment) ->
     {Total, Available} = rm_librarian:check_in_resource(Segment),
-    SegmentStruct = get_segment_json(Segment, Total, Available),
+    SegmentStruct = rm_segment_json:get(Segment, Total, Available),
     json_response(ReqData, State, [{segments, SegmentStruct}]).
 
 checkout_resource(ReqData, State, Segment) ->
     {Total, Available} = rm_librarian:check_out_resource(Segment),
-    SegmentStruct = get_segment_json(Segment, Total, Available),
+    SegmentStruct = rm_segment_json:get(Segment, Total, Available),
     json_response(ReqData, State, [{segments, SegmentStruct}]).    
 
 get_segment(ReqData) ->
@@ -76,15 +76,12 @@ get_segment(ReqData, 'PUT') ->
     {struct, Json} = mochijson2:decode(Body),
     binary_to_list(proplists:get_value(<<"segment">>, Json)).
 
-get_segment_json(Segment, TotalResources, AvailableResources) ->
-    [{name, iolist_to_binary(Segment)}, {totalResources, TotalResources}, {availableResources, AvailableResources}].
-
 get_segments_json([], JsonStruct) ->
     JsonStruct;
 get_segments_json([Segment | Segments], JsonStruct) ->
     Total = rm_librarian:get_total_resources(Segment),
     Available = rm_librarian:get_available_resources(Segment),
-    get_segments_json(Segments, [get_segment_json(Segment, Total, Available) | JsonStruct]).
+    get_segments_json(Segments, [rm_segment_json:get(Segment, Total, Available) | JsonStruct]).
 
 json_response(ReqData, State, Response) ->
     ReturnIo = mochijson2:encode(Response),
