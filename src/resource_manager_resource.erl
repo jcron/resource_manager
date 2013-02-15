@@ -5,12 +5,12 @@
 -module(resource_manager_resource).
 
 -export([init/1,
-         allowed_methods/2,
-         content_types_accepted/2,
-         content_types_provided/2,
-         from_json/2,
-         to_json/2
-        ]).
+             allowed_methods/2,
+             content_types_accepted/2,
+             content_types_provided/2,
+             from_json/2,
+             to_json/2
+            ]).
 
 -include_lib("webmachine/include/webmachine.hrl").
 
@@ -40,7 +40,7 @@ from_json(ReqData, State) ->
             _          -> bad_request(ReqData, State)
         end
     catch
-        no_resource -> json_response(ReqData, State, [{error, no_resource}]);
+        no_resource -> json_response(ReqData, State, rm_json:error(no_resource));
         _Error:_Reason -> {false, ReqData, State}
     end.
     
@@ -51,20 +51,20 @@ to_json(ReqData, State) ->
 all_resources(ReqData, State) ->
     Segments = rm_librarian:get_all_segments(),
     SegmentStruct = get_segments_json(Segments, []),
-    to_json(ReqData, State, [{segments, SegmentStruct}]).
+    to_json(ReqData, State, rm_json:segments(SegmentStruct)).
     
 bad_request(ReqData, State) ->
-    json_response(ReqData, State, [{error, bad_request}]).
+    json_response(ReqData, State, rm_json:error(bad_request)).
 
 checkin_resource(ReqData, State, Segment) ->
     {Total, Available} = rm_librarian:check_in_resource(Segment),
-    SegmentStruct = rm_segment_json:get(Segment, Total, Available),
-    json_response(ReqData, State, [{segments, SegmentStruct}]).
+    SegmentStruct = rm_json:segment_detail(Segment, Total, Available),
+    json_response(ReqData, State, rm_json:segments(SegmentStruct)).
 
 checkout_resource(ReqData, State, Segment) ->
     {Total, Available} = rm_librarian:check_out_resource(Segment),
-    SegmentStruct = rm_segment_json:get(Segment, Total, Available),
-    json_response(ReqData, State, [{segments, SegmentStruct}]).    
+    SegmentStruct = rm_json:segment_detail(Segment, Total, Available),
+    json_response(ReqData, State, rm_json:segments(SegmentStruct)).    
 
 get_segment(ReqData) ->
     get_segment(ReqData, wrq:method(ReqData)).
@@ -81,7 +81,7 @@ get_segments_json([], JsonStruct) ->
 get_segments_json([Segment | Segments], JsonStruct) ->
     Total = rm_librarian:get_total_resources(Segment),
     Available = rm_librarian:get_available_resources(Segment),
-    get_segments_json(Segments, [rm_segment_json:get(Segment, Total, Available) | JsonStruct]).
+    get_segments_json(Segments, [rm_json:segment_detail(Segment, Total, Available) | JsonStruct]).
 
 json_response(ReqData, State, Response) ->
     ReturnIo = mochijson2:encode(Response),
@@ -94,7 +94,7 @@ show_resources(ReqData, State) ->
         undefined -> all_resources(ReqData, State);
         Segment ->
             SegmentStruct = get_segments_json([Segment], []),
-            to_json(ReqData, State, [{segments, SegmentStruct}])
+            to_json(ReqData, State, rm_json:segments(SegmentStruct))
     end.
 
 to_json(ReqData, State, Json) ->
