@@ -107,5 +107,6 @@ to_json(ReqData, State, Json) ->
 
 allowed_methods_test() -> {['GET', 'PUT'], reqdata, state} = allowed_methods(reqdata, state).
 content_types_provided_test() -> {[{"application/json", to_json}], reqdata, state} = content_types_provided(reqdata, state).
+content_types_accepted_test() -> {[{"application/json", from_json}], reqdata, state} = content_types_accepted(reqdata, state).
     
 -endif.
