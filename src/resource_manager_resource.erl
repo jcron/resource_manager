@@ -34,6 +34,7 @@ from_json(ReqData, State) ->
     Action = wrq:path_info(action, ReqData),
     try
         Segment = get_segment(ReqData),
+        Conversation = get_conversation(ReqData),
         case Action of
             "checkout" -> checkout_resource(ReqData, State, Segment);
             "checkin"  -> checkin_resource(ReqData, State, Segment);
@@ -66,15 +67,24 @@ checkout_resource(ReqData, State, Segment) ->
     SegmentStruct = rm_json:segment_detail(Segment, Total, Available),
     json_response(ReqData, State, rm_json:segments(SegmentStruct)).    
 
+get_content_value(ReqData, Content) ->
+    Body = wrq:req_body(ReqData),
+    {struct, Json} = mochijson2:decode(Body),
+    case proplists:get_value(Content, Json) of
+        undefined -> [];
+        Value -> binary_to_list(Value)
+    end.
+
+get_conversation(ReqData) ->
+    get_content_value(ReqData, <<"id">>).
+
 get_segment(ReqData) ->
     get_segment(ReqData, wrq:method(ReqData)).
     
 get_segment(ReqData, 'GET') ->
     wrq:get_qs_value("segment", ReqData);
 get_segment(ReqData, 'PUT') ->
-    Body = wrq:req_body(ReqData),
-    {struct, Json} = mochijson2:decode(Body),
-    binary_to_list(proplists:get_value(<<"segment">>, Json)).
+    get_content_value(ReqData, <<"segment">>).
 
 get_segments_json([], JsonStruct) ->
     JsonStruct;
