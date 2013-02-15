@@ -33,10 +33,10 @@ update_available_resources(_, _, _, Resources) when Resources < 0 ->
     throw(no_resource);
 update_available_resources(_, _, Total, Resources) when Resources > Total ->
     throw(no_resource);
-update_available_resources(Segment, Conversation, _, Resources) ->
+update_available_resources(Segment, Conversation, Total, Resources) ->
     rm:store:find_conversation(Conversation, available_resources)
     rm_store:insert({Segment, available_resources}, Resources, Conversation),
-    {rm_store:find({Segment, total_resources}), rm_store:find({Segment, available_resources})}.
+    {Total, rm_store:find({Segment, available_resources})}.
 
 %%
 %% Unit Tests
