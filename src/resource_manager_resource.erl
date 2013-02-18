@@ -14,6 +14,10 @@
             ]).
 
 -include_lib("webmachine/include/webmachine.hrl").
+
+-define(GET_METHOD, 'GET').
+-define(PUT_METHOD, 'PUT').
+
 -define(JSON_DATA, "application/json").
 -define(FORM_DATA, "application/x-www-form-urlencoded").
 
@@ -25,7 +29,7 @@ init([]) ->
     {ok, undefined}.
 
 allowed_methods(ReqData, State) -> 
-    {[ 'GET', 'PUT' ], ReqData, State }.
+    {[ ?GET_METHOD, ?PUT_METHOD ], ReqData, State }.
 
 content_types_accepted(ReqData, State) ->
     {[{?JSON_DATA, from_json},
@@ -90,11 +94,11 @@ get_json_content_value(ReqData, Key) ->
 get_segment(ReqData, ContentType) ->
     get_segment(ReqData, wrq:method(ReqData), ContentType).
 
-get_segment(ReqData, 'GET', _) ->
+get_segment(ReqData, ?GET_METHOD, _) ->
     wrq:get_qs_value("segment", ReqData);
-get_segment(ReqData, 'PUT', ?JSON_DATA) ->
+get_segment(ReqData, ?PUT_METHOD, ?JSON_DATA) ->
     get_json_content_value(ReqData, <<"segment">>);
-get_segment(ReqData, 'PUT', ?FORM_DATA) ->    
+get_segment(ReqData, ?PUT_METHOD, ?FORM_DATA) ->    
     get_url_encoded_value(ReqData, "segment").
 
 get_segments_json([], JsonStruct) ->
@@ -145,7 +149,7 @@ to_json(ReqData, State) ->
 %%
 -ifdef(EUNIT).
 
-allowed_methods_test() -> {['GET', 'PUT'], reqdata, state} = allowed_methods(reqdata, state).
+allowed_methods_test() -> {[?GET_METHOD, ?PUT_METHOD], reqdata, state} = allowed_methods(reqdata, state).
 content_types_provided_test() -> {[{?JSON_DATA, show_resources}], reqdata, state} = content_types_provided(reqdata, state).
 content_types_accepted_test() -> {[{?JSON_DATA, from_json}, {?FORM_DATA, from_url_encoded}], reqdata, state} = content_types_accepted(reqdata, state).
     
