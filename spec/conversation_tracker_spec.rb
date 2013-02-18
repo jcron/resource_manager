@@ -5,11 +5,13 @@ require "conversation_tracker"
 
 describe ConversationTracker do
 
+  TARGET = ENV["TARGET"] || "localhost:8000"
+
   it "should instantiate" do
     ConversationTracker.new
   end
 
-  it "should add an conversation location" do
+  it "should add a conversation location" do
     it = ConversationTracker.new
     location = "Some Location"
     it.AddConversation(location)
@@ -22,7 +24,7 @@ describe ConversationTracker do
     location2 = "location two"
     headers = {:accept=>:json, :content_type=>:json}
     path = TARGET + "/resources/checkin"
-    
+
     RestClient.should_receive(:put).with(path, location1, headers)
     RestClient.should_receive(:put).with(path, location2, headers)
 
