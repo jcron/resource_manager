@@ -47,6 +47,14 @@ Feature: Resources
     | application/json                  | {"segment":"Service"} |
     | application/x-www-form-urlencoded | segment=Service       |
 
+  Scenario Outline: Cannot checkout without a segment
+    When I put <content_type> data <data> to /resources/checkout
+    Then I should receive an error of no_resource
+  Examples:
+    | content_type                      | data                  |
+    | application/json                  | {"id":"conversation"} |
+    | application/x-www-form-urlencoded | id=conversation       |
+
   Scenario Outline: Cannot checkin without first checking out
     When I put <content_type> data <data> to /resources/checkin
     Then I should receive an error of no_resource
@@ -63,6 +71,6 @@ Feature: Resources
     When I put <content_type> data <data> to /resources/checkout
     Then I should receive an error of no_resource
   Examples:
-    | content_type                      | data                                       |
+    | content_type                      | data                                     |
     | application/json                  | {"segment":"Sales", "id":"conversation"} |
     | application/x-www-form-urlencoded | segment=Sales&id=conversation            |
