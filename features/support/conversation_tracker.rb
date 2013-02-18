@@ -6,8 +6,8 @@ class ConversationTracker
     @conversation_list = []
   end
 
-  def AddConversation(location, content_type)
-    @conversation_list << [location, content_type]
+  def AddConversation(body, content_type)
+    @conversation_list << [body, content_type]
   end
 
   def CleanupConversation
