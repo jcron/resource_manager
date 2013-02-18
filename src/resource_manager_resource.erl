@@ -14,8 +14,8 @@
             ]).
 
 -include_lib("webmachine/include/webmachine.hrl").
--define(JSONDATA, "application/json").
--define(FORMDATA, "application/x-www-form-urlencoded").
+-define(JSON_DATA, "application/json").
+-define(FORM_DATA, "application/x-www-form-urlencoded").
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -28,12 +28,12 @@ allowed_methods(ReqData, State) ->
     {[ 'GET', 'PUT' ], ReqData, State }.
 
 content_types_accepted(ReqData, State) ->
-    {[{?JSONDATA, from_json},
-        {?FORMDATA, from_url_encoded}
+    {[{?JSON_DATA, from_json},
+        {?FORM_DATA, from_url_encoded}
       ], ReqData, State}.
     
 content_types_provided(ReqData, State) ->
-    {[{?JSONDATA, show_resources}], ReqData, State}.
+    {[{?JSON_DATA, show_resources}], ReqData, State}.
 
 from_json(ReqData, State) ->
     to_json(ReqData, State).
@@ -74,9 +74,9 @@ encode_to_json(ReqData, State, Json) ->
 get_content_type_value(ReqData) ->
     mochiweb_headers:get_value('Content-Type', wrq:req_headers(ReqData)).
 
-get_conversation(ReqData, ?JSONDATA) ->
+get_conversation(ReqData, ?JSON_DATA) ->
     get_json_content_value(ReqData, <<"id">>);
-get_conversation(ReqData, ?FORMDATA) ->
+get_conversation(ReqData, ?FORM_DATA) ->
     get_url_encoded_value(ReqData, "id").
 
 get_json_content_value(ReqData, Key) ->
@@ -92,9 +92,9 @@ get_segment(ReqData, ContentType) ->
 
 get_segment(ReqData, 'GET', _) ->
     wrq:get_qs_value("segment", ReqData);
-get_segment(ReqData, 'PUT', ?JSONDATA) ->
+get_segment(ReqData, 'PUT', ?JSON_DATA) ->
     get_json_content_value(ReqData, <<"segment">>);
-get_segment(ReqData, 'PUT', ?FORMDATA) ->    
+get_segment(ReqData, 'PUT', ?FORM_DATA) ->    
     get_url_encoded_value(ReqData, "segment").
 
 get_segments_json([], JsonStruct) ->
@@ -146,7 +146,7 @@ to_json(ReqData, State) ->
 -ifdef(EUNIT).
 
 allowed_methods_test() -> {['GET', 'PUT'], reqdata, state} = allowed_methods(reqdata, state).
-content_types_provided_test() -> {[{?JSONDATA, show_resources}], reqdata, state} = content_types_provided(reqdata, state).
-content_types_accepted_test() -> {[{?JSONDATA, from_json}, {?FORMDATA, from_url_encoded}], reqdata, state} = content_types_accepted(reqdata, state).
+content_types_provided_test() -> {[{?JSON_DATA, show_resources}], reqdata, state} = content_types_provided(reqdata, state).
+content_types_accepted_test() -> {[{?JSON_DATA, from_json}, {?FORM_DATA, from_url_encoded}], reqdata, state} = content_types_accepted(reqdata, state).
     
 -endif.
