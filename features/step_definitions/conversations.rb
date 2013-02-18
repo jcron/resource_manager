@@ -31,3 +31,12 @@ end
 When /^I should receive a body with a segment of (.*)$/ do |segment|
   @parsed["segments"].include?(JSON.parse(segment))
 end
+
+When /^I should not receive a body with a segment of (.*)$/ do |segment|
+  @parsed["segments"].include?(JSON.parse(segment)).should be_false
+end
+
+Then /^I should receive an error of (.*)$/ do |error|
+  step "I should receive valid JSON"
+  @parsed["error"].should == error
+end
