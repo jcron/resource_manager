@@ -13,6 +13,8 @@
 
 check_out_resource(_, []) ->
     throw(no_resource);
+check_out_resource([], _) ->
+    throw(no_resource);
 check_out_resource(Segment, Conversation) ->
     Available = rm_store:find({Segment, available_resources}),
     case rm_store:conversation_exists(Conversation, available_resources) of
@@ -23,6 +25,8 @@ check_out_resource(Segment, Conversation) ->
     end.    
 
 check_in_resource(_, []) ->
+    throw(no_resource);
+check_in_resource([], _) ->
     throw(no_resource);
 check_in_resource(Segment, Conversation) ->
     Available = rm_store:find({Segment, available_resources}),
@@ -61,7 +65,19 @@ cannot_update_when_no_resources_left_test() ->
 
 cannot_update_when_resources_is_more_than_total_test() ->
     ?assertThrow(no_resource, update_available_resources("Sales", 1, 2)).
-        
+
+check_in_needs_a_conversation_test() ->
+    ?assertThrow(no_resource, check_in_resource("Sales", [])).
+    
+check_in_needs_a_segment_test() ->
+    ?assertThrow(no_resource, check_in_resource("Sales", [])).
+
+check_out_needs_a_conversation_test() ->
+    ?assertThrow(no_resource, check_out_resource([], "id")).
+
+check_out_needs_a_segment_test() ->
+    ?assertThrow(no_resource, check_out_resource([], "id")).
+
 with_setup_of_storage_test_() ->
     {setup,
      fun setup/0,
@@ -72,17 +88,11 @@ with_setup_of_storage_test_() ->
 get_total_resources_returns_correct_count(Segment) ->
     ?assertEqual(1, get_total_resources(Segment)).
 
-check_out_needs_a_conversation(Segment) ->
-    ?assertThrow(no_resource, check_out_resource(Segment, [])).
-
 check_out_resource_decreases_count(Segment) ->
     ?assertEqual({1, 0}, check_out_resource(Segment, "id")).
 
 check_out_only_allows_one_resource_per_id(Segment) ->
     ?assertThrow(no_resource, check_out_resource(Segment, "id")).
-
-check_in_needs_a_conversation(Segment) ->
-    ?assertThrow(no_resource, check_in_resource(Segment, [])).
     
 check_in_resource_increases_count(Segment) ->
     ?assertEqual({1, 1}, check_in_resource(Segment, "id")).
@@ -103,10 +113,8 @@ cleanup(_) ->
 instantiator(Segment) ->
     {inorder,
         [?_test(get_total_resources_returns_correct_count(Segment)),
-         ?_test(check_out_needs_a_conversation(Segment)),
          ?_test(check_out_resource_decreases_count(Segment)),
          ?_test(check_out_only_allows_one_resource_per_id(Segment)),
-         ?_test(check_in_needs_a_conversation(Segment)),
          ?_test(check_in_resource_increases_count(Segment)),
          ?_test(check_in_resource_needs_id_already_checked_out(Segment)),
          ?_test(get_all_segments_returns_all_segments(Segment))]
