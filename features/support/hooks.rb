@@ -1,11 +1,11 @@
 $LOAD_PATH.unshift(File.expand_path("features/support"))
 require "conversation_tracker"
 
-Before do
+Before('@cleanup') do
   @conversation_tracker = ConversationTracker.new
 end
 
-After do
+After('@cleanup') do
   @conversation_tracker.CleanupConversation
 end
 

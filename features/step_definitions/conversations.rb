@@ -10,10 +10,10 @@ When /^I try to invoke (.*?)$/ do |url|
   end
 end
 
-When /^I put ({.*}) to (.*?)$/ do |body, url|
+When /^I put (.*) data (.*) to (.*?)$/ do |content_type, body, url|
   begin
-    @conversation_tracker.AddConversation(body)
-    @response = RestClient.put(TARGET + url, body, {:accept => :json, :content_type => :json})
+    @conversation_tracker.AddConversation(body, content_type) if @conversation_tracker
+    @response = RestClient.put(TARGET + url, body, {:accept => :json, :content_type => content_type})
     @code = @response.code
   rescue RestClient::Exception => e
     @code = e.http_code
