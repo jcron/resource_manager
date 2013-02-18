@@ -28,6 +28,6 @@ Then /^I should receive valid JSON$/ do
   @parsed = JSON.parse(@response.body)
 end
 
-When /^I should receive a body with a segment of ({.*})$/ do |segment|
-  @parsed["segments"].should == JSON.parse(segment)
+When /^I should receive a body with a segment of (.*)$/ do |segment|
+  @parsed["segments"].include?(JSON.parse(segment))
 end
