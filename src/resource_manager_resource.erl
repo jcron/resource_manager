@@ -106,8 +106,10 @@ get_segments_json([Segment | Segments], JsonStruct) ->
 
 get_url_encoded_value(ReqData, Key) ->
     Body = mochiweb_util:parse_qs(wrq:req_body(ReqData)),
-    {Key, Value} = lists:keyfind(Key, 1, Body),
-    Value.
+    case lists:keyfind(Key, 1, Body) of
+        false -> [];
+        {Key, Value} -> Value
+    end.
 
 json_response(ReqData, State, Response) ->
     ReturnIo = mochijson2:encode(Response),
