@@ -52,7 +52,7 @@ to_json(ReqData, State) ->
 all_resources(ReqData, State) ->
     Segments = rm_librarian:get_all_segments(),
     SegmentStruct = get_segments_json(Segments, []),
-    to_json(ReqData, State, rm_json:segments(SegmentStruct)).
+    encode_to_json(ReqData, State, rm_json:segments(SegmentStruct)).
     
 bad_request(ReqData, State) ->
     json_response(ReqData, State, rm_json:error(bad_request)).
@@ -67,6 +67,9 @@ checkout_resource(ReqData, State, Segment, Conversation) ->
     SegmentStruct = rm_json:segment_detail(Segment, Total, Available),
     json_response(ReqData, State, rm_json:segments(SegmentStruct)).    
 
+encode_to_json(ReqData, State, Json) ->
+    {mochijson2:encode(Json), ReqData, State}.
+    
 get_content_value(ReqData, Content) ->
     Body = wrq:req_body(ReqData),
     {struct, Json} = mochijson2:decode(Body),
@@ -107,11 +110,8 @@ show_resources(ReqData, State) ->
         undefined -> all_resources(ReqData, State);
         Segment ->
             SegmentStruct = get_segments_json([Segment], []),
-            to_json(ReqData, State, rm_json:segments(SegmentStruct))
+            encode_to_json(ReqData, State, rm_json:segments(SegmentStruct))
     end.
-
-to_json(ReqData, State, Json) ->
-    {mochijson2:encode(Json), ReqData, State}.
 
 %%
 %% Unit Tests
