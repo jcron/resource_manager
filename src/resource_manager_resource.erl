@@ -9,7 +9,8 @@
              content_types_accepted/2,
              content_types_provided/2,
              from_json/2,
-             to_json/2
+             from_url_encoded/2,
+             show_resources/2
             ]).
 
 -include_lib("webmachine/include/webmachine.hrl").
@@ -25,28 +26,26 @@ allowed_methods(ReqData, State) ->
     {[ 'GET', 'PUT' ], ReqData, State }.
 
 content_types_accepted(ReqData, State) ->
-    {[{"application/json", from_json}], ReqData, State}.
+    {[{"application/json", from_json},
+        {"application/x-www-form-urlencoded", from_url_encoded}
+      ], ReqData, State}.
     
 content_types_provided(ReqData, State) ->
-    {[{"application/json", to_json}], ReqData, State}.
+    {[{"application/json", show_resources}], ReqData, State}.
 
 from_json(ReqData, State) ->
-    try
-        Action = wrq:path_info(action, ReqData),
-        Segment = get_segment(ReqData),
-        Conversation = get_conversation(ReqData),
-        case Action of
-            "checkout" -> checkout_resource(ReqData, State, Segment, Conversation);
-            "checkin"   -> checkin_resource(ReqData, State, Segment, Conversation);
-            _              -> bad_request(ReqData, State)
-        end
-    catch
-        no_resource -> no_resource(ReqData, State);
-        _Error:_Reason -> {false, ReqData, State}
+    to_json(ReqData, State).
+
+from_url_encoded(ReqData, State) ->
+    to_json(ReqData, State).
+
+show_resources(ReqData, State) ->
+    case get_segment(ReqData, []) of
+        undefined -> all_resources(ReqData, State);
+        Segment ->
+            SegmentStruct = get_segments_json([Segment], []),
+            encode_to_json(ReqData, State, rm_json:segments(SegmentStruct))
     end.
-    
-to_json(ReqData, State) ->
-    show_resources(ReqData, State).
 
 %%% Local Functions
 all_resources(ReqData, State) ->
@@ -69,25 +68,32 @@ checkout_resource(ReqData, State, Segment, Conversation) ->
 
 encode_to_json(ReqData, State, Json) ->
     {mochijson2:encode(Json), ReqData, State}.
-    
-get_content_value(ReqData, Content) ->
+
+get_content_type_value(ReqData) ->
+    mochiweb_headers:get_value('Content-Type', wrq:req_headers(ReqData)).
+
+get_conversation(ReqData, "application/json") ->
+    get_json_content_value(ReqData, <<"id">>);
+get_conversation(ReqData, "application/x-www-form-urlencoded") ->
+    get_url_encoded_value(ReqData, "id").
+
+get_json_content_value(ReqData, Key) ->
     Body = wrq:req_body(ReqData),
     {struct, Json} = mochijson2:decode(Body),
-    case proplists:get_value(Content, Json) of
+    case proplists:get_value(Key, Json) of
         undefined -> [];
         Value -> binary_to_list(Value)
     end.
 
-get_conversation(ReqData) ->
-    get_content_value(ReqData, <<"id">>).
+get_segment(ReqData, ContentType) ->
+    get_segment(ReqData, wrq:method(ReqData), ContentType).
 
-get_segment(ReqData) ->
-    get_segment(ReqData, wrq:method(ReqData)).
-    
-get_segment(ReqData, 'GET') ->
+get_segment(ReqData, 'GET', _) ->
     wrq:get_qs_value("segment", ReqData);
-get_segment(ReqData, 'PUT') ->
-    get_content_value(ReqData, <<"segment">>).
+get_segment(ReqData, 'PUT', "application/json") ->
+    get_json_content_value(ReqData, <<"segment">>);
+get_segment(ReqData, 'PUT', "application/x-www-form-urlencoded") ->    
+    get_url_encoded_value(ReqData, "segment").
 
 get_segments_json([], JsonStruct) ->
     JsonStruct;
@@ -95,6 +101,11 @@ get_segments_json([Segment | Segments], JsonStruct) ->
     Total = rm_librarian:get_total_resources(Segment),
     Available = rm_librarian:get_available_resources(Segment),
     get_segments_json(Segments, [rm_json:segment_detail(Segment, Total, Available) | JsonStruct]).
+
+get_url_encoded_value(ReqData, Key) ->
+    Body = mochiweb_util:parse_qs(wrq:req_body(ReqData)),
+    {Key, Value} = lists:keyfind(Key, 1, Body),
+    Value.
 
 json_response(ReqData, State, Response) ->
     ReturnIo = mochijson2:encode(Response),
@@ -105,12 +116,24 @@ json_response(ReqData, State, Response) ->
 no_resource(ReqData, State) ->
     json_response(ReqData, State, rm_json:error(no_resource)).
 
-show_resources(ReqData, State) ->
-    case get_segment(ReqData) of
-        undefined -> all_resources(ReqData, State);
-        Segment ->
-            SegmentStruct = get_segments_json([Segment], []),
-            encode_to_json(ReqData, State, rm_json:segments(SegmentStruct))
+parse_input_data(ReqData) ->
+    ContentType = get_content_type_value(ReqData),
+    Segment = get_segment(ReqData, ContentType),
+    Conversation = get_conversation(ReqData, ContentType),
+    Action = wrq:path_info(action, ReqData),
+    {Action, Segment, Conversation}.
+
+to_json(ReqData, State) ->
+    try
+        {Action, Segment, Conversation} = parse_input_data(ReqData),
+        case Action of
+            "checkout" -> checkout_resource(ReqData, State, Segment, Conversation);
+            "checkin"   -> checkin_resource(ReqData, State, Segment, Conversation);
+            _              -> bad_request(ReqData, State)
+        end
+    catch
+        no_resource -> no_resource(ReqData, State);
+        _Error:_Reason -> {false, ReqData, State}
     end.
 
 %%
@@ -119,7 +142,7 @@ show_resources(ReqData, State) ->
 -ifdef(EUNIT).
 
 allowed_methods_test() -> {['GET', 'PUT'], reqdata, state} = allowed_methods(reqdata, state).
-content_types_provided_test() -> {[{"application/json", to_json}], reqdata, state} = content_types_provided(reqdata, state).
-content_types_accepted_test() -> {[{"application/json", from_json}], reqdata, state} = content_types_accepted(reqdata, state).
+content_types_provided_test() -> {[{"application/json", show_resources}], reqdata, state} = content_types_provided(reqdata, state).
+content_types_accepted_test() -> {[{"application/json", from_json}, {"application/x-www-form-urlencoded", from_url_encoded}], reqdata, state} = content_types_accepted(reqdata, state).
     
 -endif.
