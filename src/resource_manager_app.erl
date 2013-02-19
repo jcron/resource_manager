@@ -25,8 +25,8 @@ stop(_State) ->
 %%% Local Functions
 initialize_resources([]) ->
     ok;
-initialize_resources([{Segment, Total} | RestOfResources]) ->
-    rm_store:initialize_segment(Segment, Total),
+initialize_resources([{Connection, Total} | RestOfResources]) ->
+    rm_store:initialize_connection(Connection, Total),
     initialize_resources(RestOfResources).
 
 initialize_resources_from_config() ->

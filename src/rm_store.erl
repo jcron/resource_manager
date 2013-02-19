@@ -9,7 +9,7 @@
              finalize/0,
              find/1,
              find_all/1,
-             initialize_segment/2,
+             initialize_connection/2,
              insert/2,
              remove_conversation/1
             ]).
@@ -60,16 +60,16 @@ find_all(Key) ->
         mnesia:match_object(?RESOURCE_TABLE_ID, {?RESOURCE_RECORD, {'_', Key}, '_'}, read)
     end,
     { atomic, Results } = mnesia:transaction(ReadFun),
-    [get_segment_from_record(Result) || Result <- Results].
+    [get_connection_from_record(Result) || Result <- Results].
 
-initialize_segment(Segment, Resources) ->
-    insert({Segment, total_resources}, Resources),
-    insert({Segment, available_resources}, Resources),
-    Segment.
+initialize_connection(Connection, Resources) ->
+    insert({Connection, total_resources}, Resources),
+    insert({Connection, available_resources}, Resources),
+    Connection.
 
-insert({Segment, Key}, Value) ->
+insert({Connection, Key}, Value) ->
     InsertFun = fun() ->
-        ok = mnesia:write(#resource_record{key = {Segment, Key}, value = Value})
+        ok = mnesia:write(#resource_record{key = {Connection, Key}, value = Value})
     end,
     {atomic, Results} = mnesia:transaction(InsertFun),
     Results.
@@ -83,6 +83,6 @@ remove_conversation(Conversation) ->
 
     
 %%% Local functions
-get_segment_from_record(Record) ->
-    {Segment, _} = Record#resource_record.key,
-    Segment.
+get_connection_from_record(Record) ->
+    {Connection, _} = Record#resource_record.key,
+    Connection.

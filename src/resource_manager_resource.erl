@@ -46,31 +46,31 @@ from_url_encoded(ReqData, State) ->
     to_json(ReqData, State).
 
 show_resources(ReqData, State) ->
-    case get_segment(ReqData, []) of
+    case get_connection(ReqData, []) of
         undefined -> all_resources(ReqData, State);
-        Segment ->
-            SegmentStruct = get_segments_json([Segment], []),
-            encode_to_json(ReqData, State, rm_json:segments(SegmentStruct))
+        Connection ->
+            ConnectionStruct = get_connections_json([Connection], []),
+            encode_to_json(ReqData, State, rm_json:connections(ConnectionStruct))
     end.
 
 %%% Local Functions
 all_resources(ReqData, State) ->
-    Segments = rm_librarian:get_all_segments(),
-    SegmentStruct = get_segments_json(Segments, []),
-    encode_to_json(ReqData, State, rm_json:segments(SegmentStruct)).
+    Connections = rm_librarian:get_all_connections(),
+    ConnectionStruct = get_connections_json(Connections, []),
+    encode_to_json(ReqData, State, rm_json:connections(ConnectionStruct)).
     
 bad_request(ReqData, State) ->
     json_response(ReqData, State, rm_json:error(bad_request)).
 
-checkin_resource(ReqData, State, Segment, Conversation) ->
-    {Total, Available} = rm_librarian:check_in_resource(Segment, Conversation),
-    SegmentStruct = rm_json:segment_detail(Segment, Total, Available),
-    json_response(ReqData, State, rm_json:segments(SegmentStruct)).
+checkin_resource(ReqData, State, Connection, Conversation) ->
+    {Total, Available} = rm_librarian:check_in_resource(Connection, Conversation),
+    ConnectionStruct = rm_json:connection_detail(Connection, Total, Available),
+    json_response(ReqData, State, rm_json:connections(ConnectionStruct)).
 
-checkout_resource(ReqData, State, Segment, Conversation) ->
-    {Total, Available} = rm_librarian:check_out_resource(Segment, Conversation),
-    SegmentStruct = rm_json:segment_detail(Segment, Total, Available),
-    json_response(ReqData, State, rm_json:segments(SegmentStruct)).    
+checkout_resource(ReqData, State, Connection, Conversation) ->
+    {Total, Available} = rm_librarian:check_out_resource(Connection, Conversation),
+    ConnectionStruct = rm_json:connection_detail(Connection, Total, Available),
+    json_response(ReqData, State, rm_json:connections(ConnectionStruct)).    
 
 encode_to_json(ReqData, State, Json) ->
     {mochijson2:encode(Json), ReqData, State}.
@@ -91,22 +91,22 @@ get_json_content_value(ReqData, Key) ->
         Value -> binary_to_list(Value)
     end.
 
-get_segment(ReqData, ContentType) ->
-    get_segment(ReqData, wrq:method(ReqData), ContentType).
+get_connection(ReqData, ContentType) ->
+    get_connection(ReqData, wrq:method(ReqData), ContentType).
 
-get_segment(ReqData, ?GET_METHOD, _) ->
-    wrq:get_qs_value("segment", ReqData);
-get_segment(ReqData, ?PUT_METHOD, ?JSON_DATA) ->
-    get_json_content_value(ReqData, <<"segment">>);
-get_segment(ReqData, ?PUT_METHOD, ?FORM_DATA) ->    
-    get_url_encoded_value(ReqData, "segment").
+get_connection(ReqData, ?GET_METHOD, _) ->
+    wrq:get_qs_value("connection", ReqData);
+get_connection(ReqData, ?PUT_METHOD, ?JSON_DATA) ->
+    get_json_content_value(ReqData, <<"connection">>);
+get_connection(ReqData, ?PUT_METHOD, ?FORM_DATA) ->    
+    get_url_encoded_value(ReqData, "connection").
 
-get_segments_json([], JsonStruct) ->
+get_connections_json([], JsonStruct) ->
     JsonStruct;
-get_segments_json([Segment | Segments], JsonStruct) ->
-    Total = rm_librarian:get_total_resources(Segment),
-    Available = rm_librarian:get_available_resources(Segment),
-    get_segments_json(Segments, [rm_json:segment_detail(Segment, Total, Available) | JsonStruct]).
+get_connections_json([Connection | Connections], JsonStruct) ->
+    Total = rm_librarian:get_total_resources(Connection),
+    Available = rm_librarian:get_available_resources(Connection),
+    get_connections_json(Connections, [rm_json:connection_detail(Connection, Total, Available) | JsonStruct]).
 
 get_url_encoded_value(ReqData, Key) ->
     Body = mochiweb_util:parse_qs(wrq:req_body(ReqData)),
@@ -126,17 +126,17 @@ no_resource(ReqData, State) ->
 
 parse_input_data(ReqData) ->
     ContentType = get_content_type_value(ReqData),
-    Segment = get_segment(ReqData, ContentType),
+    Connection = get_connection(ReqData, ContentType),
     Conversation = get_conversation(ReqData, ContentType),
     Action = wrq:path_info(action, ReqData),
-    {Action, Segment, Conversation}.
+    {Action, Connection, Conversation}.
 
 to_json(ReqData, State) ->
     try
-        {Action, Segment, Conversation} = parse_input_data(ReqData),
+        {Action, Connection, Conversation} = parse_input_data(ReqData),
         case Action of
-            "checkout" -> checkout_resource(ReqData, State, Segment, Conversation);
-            "checkin"   -> checkin_resource(ReqData, State, Segment, Conversation);
+            "checkout" -> checkout_resource(ReqData, State, Connection, Conversation);
+            "checkin"   -> checkin_resource(ReqData, State, Connection, Conversation);
             _              -> bad_request(ReqData, State)
         end
     catch
