@@ -24,10 +24,9 @@ Feature: Resources
     Then I should receive valid JSON
     And I should receive a body with a connection of {"name":"Service", "totalResources":15, "availableResources":14}
   Examples:
-    | content_type                      | data                                       |
+    | content_type                      | data                                          |
     | application/json                  | {"connection":"Service", "id":"conversation"} |
     | application/x-www-form-urlencoded | connection=Service&id=conversation            |
-
 
   Scenario Outline: Checkin a resource
     Given I put <content_type> data <data> to /resources/checkout
@@ -36,7 +35,7 @@ Feature: Resources
     Then I should receive valid JSON
     And I should receive a body with a connection of {"name":"Service", "totalResources":15, "availableResources":15}
   Examples:
-    | content_type                      | data                                       |
+    | content_type                      | data                                          |
     | application/json                  | {"connection":"Service", "id":"conversation"} |
     | application/x-www-form-urlencoded | connection=Service&id=conversation            |
 
@@ -44,7 +43,7 @@ Feature: Resources
     When I put <content_type> data <data> to /resources/checkout
     Then I should receive an error of no_resource
   Examples:
-    | content_type                      | data                  |
+    | content_type                      | data                     |
     | application/json                  | {"connection":"Service"} |
     | application/x-www-form-urlencoded | connection=Service       |
 
@@ -60,7 +59,7 @@ Feature: Resources
     When I put <content_type> data <data> to /resources/checkin
     Then I should receive an error of no_resource
   Examples:
-    | content_type                      | data                                       |
+    | content_type                      | data                                          |
     | application/json                  | {"connection":"Service", "id":"conversation"} |
     | application/x-www-form-urlencoded | connection=Service&id=conversation            |
 
@@ -72,6 +71,17 @@ Feature: Resources
     When I put <content_type> data <data> to /resources/checkout
     Then I should receive an error of no_resource
   Examples:
-    | content_type                      | data                                     |
+    | content_type                      | data                                        |
     | application/json                  | {"connection":"Sales", "id":"conversation"} |
     | application/x-www-form-urlencoded | connection=Sales&id=conversation            |
+
+  @cleanup
+  Scenario Outline: Cannot checkin a resource that was checked out from a different connection
+    Given I put <content_type> data <service_data> to /resources/checkout
+    Given I put <content_type> data <sales_data> to /resources/checkout
+    When I put <content_type> data <incorrect_data> to /resources/checkin
+    Then I should receive an error of no_resource
+  Examples:
+    | content_type                      | service_data                                  | sales_data                                 | incorrect_data                              |
+    | application/json                  | {"connection":"Service", "id":"conversation"} | {"connection":"Sales", "id":"interaction"} | {"connection":"Sales", "id":"conversation"} |
+    | application/x-www-form-urlencoded | connection=Service&id=conversation            | connection=Sales&id=interaction            | connection=Sales&id=conversation            |
