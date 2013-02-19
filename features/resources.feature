@@ -28,6 +28,7 @@ Feature: Resources
     | application/json                  | {"segment":"Service", "id":"conversation"} |
     | application/x-www-form-urlencoded | segment=Service&id=conversation            |
 
+
   Scenario Outline: Checkin a resource
     Given I put <content_type> data <data> to /resources/checkout
     When I put <content_type> data <data> to /resources/checkin
