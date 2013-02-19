@@ -28,12 +28,12 @@ Then /^I should receive valid JSON$/ do
   @parsed = JSON.parse(@response.body)
 end
 
-When /^I should receive a body with a segment of (.*)$/ do |segment|
-  @parsed["segments"].include?(JSON.parse(segment))
+When /^I should receive a body with a connection of (.*)$/ do |connection|
+  @parsed["connections"].include?(JSON.parse(connection))
 end
 
-When /^I should not receive a body with a segment of (.*)$/ do |segment|
-  @parsed["segments"].include?(JSON.parse(segment)).should be_false
+When /^I should not receive a body with a connection of (.*)$/ do |connection|
+  @parsed["connections"].include?(JSON.parse(connection)).should be_false
 end
 
 Then /^I should receive an error of (.*)$/ do |error|
