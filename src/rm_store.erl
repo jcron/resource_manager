@@ -36,9 +36,9 @@ clone(MasterNode) ->
     mnesia:add_table_copy(?CONVERSATION_TABLE_ID, node(), ram_copies).
 
 conversation_exists({Conversation, []}, Type) ->
-    find_conversation({?CONVERSATION_RECORD, {Conversation, '_'}, Type});
+    find_conversation({Conversation, '_'}, Type);
 conversation_exists({Conversation, Connection}, Type) ->
-    find_conversation({?CONVERSATION_RECORD, {Conversation, Connection}, Type}).
+    find_conversation({Conversation, Connection}, Type).
 
 finalize() ->
     mnesia:stop().
@@ -78,10 +78,10 @@ remove_conversation(Conversation, Connection) ->
 
     
 %%% Local functions
-find_conversation(Record) ->
+find_conversation(Key, Type) ->
     FindFun = fun() ->
-        case mnesia:match_object(?CONVERSATION_TABLE_ID, Record, read) of
-            [{?CONVERSATION_RECORD, {Conversation, Connection}, _}] ->
+        case mnesia:match_object(?CONVERSATION_TABLE_ID, {?CONVERSATION_RECORD, Key, Type}, read) of
+            [{?CONVERSATION_RECORD, {_, Connection}, _}] ->
                 {true, Connection};
             _ -> {false, []}
         end
