@@ -17,10 +17,10 @@ check_out_resource([], _) ->
     throw(no_resource);
 check_out_resource(Connection, Conversation) ->
     Available = rm_store:find({Connection, available_resources}),
-    case rm_store:conversation_exists(Conversation, available_resources) of
+    case rm_store:conversation_exists({Conversation, Connection}, available_resources) of
         true  -> throw(no_resource);
         false ->
-            rm_store:add_conversation(Conversation, available_resources),
+            rm_store:add_conversation({Conversation, Connection}, available_resources),
             update_available_resources(Connection, get_total_resources(Connection), Available - 1)
     end.    
 
@@ -30,9 +30,9 @@ check_in_resource([], _) ->
     throw(no_resource);
 check_in_resource(Connection, Conversation) ->
     Available = rm_store:find({Connection, available_resources}),
-    case rm_store:conversation_exists(Conversation, available_resources) of
+    case rm_store:conversation_exists({Conversation, Connection}, available_resources) of
         true  ->
-            rm_store:remove_conversation(Conversation),
+            rm_store:remove_conversation({Conversation, Connection}),
             update_available_resources(Connection, get_total_resources(Connection), Available + 1);
         false -> throw(no_resource)
     end.  

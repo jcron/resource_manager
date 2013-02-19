@@ -22,9 +22,9 @@ init() ->
     mnesia:create_table(?CONVERSATION_TABLE_ID, [{attributes, record_info(fields, ?CONVERSATION_RECORD)}]),
     mnesia:wait_for_tables([?RESOURCE_TABLE_ID, ?CONVERSATION_TABLE_ID], 20000).
 
-add_conversation(Conversation, Type) ->
+add_conversation({Conversation, Connection}, Type) ->
     InsertFun = fun() ->
-        ok = mnesia:write(#conversation_record{conversation = Conversation, resource_type = Type})
+        ok = mnesia:write(#conversation_record{key = {Conversation, Connection}, resource_type = Type})
     end,
     {_, Results} = mnesia:transaction(InsertFun),
     Results.
@@ -35,9 +35,9 @@ clone(MasterNode) ->
     mnesia:add_table_copy(?RESOURCE_RECORD, node(), ram_copies),
     mnesia:add_table_copy(?CONVERSATION_TABLE_ID, node(), ram_copies).
 
-conversation_exists(Conversation, Type) ->
+conversation_exists({Conversation, Connection}, Type) ->
     FindFun = fun() ->
-        case mnesia:match_object(?CONVERSATION_TABLE_ID, {?CONVERSATION_RECORD, Conversation, Type}, read) of
+        case mnesia:match_object(?CONVERSATION_TABLE_ID, {?CONVERSATION_RECORD, {Conversation, Connection}, Type}, read) of
             [] -> false;
             _ -> true
         end
@@ -74,9 +74,9 @@ insert({Connection, Key}, Value) ->
     {atomic, Results} = mnesia:transaction(InsertFun),
     Results.
 
-remove_conversation(Conversation) ->
+remove_conversation({Conversation, Connection}) ->
     RemoveFun = fun() ->
-        ok = mnesia:delete({?CONVERSATION_TABLE_ID, Conversation})        
+        ok = mnesia:delete({?CONVERSATION_TABLE_ID, {Conversation, Connection}})
     end,
     {_, Results} = mnesia:transaction(RemoveFun),
     Results.
