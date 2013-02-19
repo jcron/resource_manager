@@ -62,13 +62,13 @@ all_resources(ReqData, State) ->
 bad_request(ReqData, State) ->
     json_response(ReqData, State, rm_json:error(bad_request)).
 
-checkin_resource(ReqData, State, Connection, Conversation) ->
-    {Total, Available} = rm_librarian:check_in_resource(Connection, Conversation),
+checkin_resource(ReqData, State, Conversation) ->
+    {Connection, Total, Available} = rm_librarian:check_in_resource(Conversation),
     ConnectionStruct = rm_json:connection_detail(Connection, Total, Available),
     json_response(ReqData, State, rm_json:connections(ConnectionStruct)).
 
 checkout_resource(ReqData, State, Connection, Conversation) ->
-    {Total, Available} = rm_librarian:check_out_resource(Connection, Conversation),
+    {Connection, Total, Available} = rm_librarian:check_out_resource(Connection, Conversation),
     ConnectionStruct = rm_json:connection_detail(Connection, Total, Available),
     json_response(ReqData, State, rm_json:connections(ConnectionStruct)).    
 
@@ -136,7 +136,7 @@ to_json(ReqData, State) ->
         {Action, Connection, Conversation} = parse_input_data(ReqData),
         case Action of
             "checkout" -> checkout_resource(ReqData, State, Connection, Conversation);
-            "checkin"   -> checkin_resource(ReqData, State, Connection, Conversation);
+            "checkin"   -> checkin_resource(ReqData, State, Conversation);
             _              -> bad_request(ReqData, State)
         end
     catch
