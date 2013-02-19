@@ -24,7 +24,7 @@ init() ->
 
 add_conversation({Conversation, Connection}, Type) ->
     InsertFun = fun() ->
-        ok = mnesia:write(#conversation_record{key = {Conversation, Connection}, resource_type = Type})
+        ok = mnesia:write(#?CONVERSATION_RECORD{key = {Conversation, Connection}, resource_type = Type})
     end,
     {_, Results} = mnesia:transaction(InsertFun),
     Results.
@@ -36,26 +36,9 @@ clone(MasterNode) ->
     mnesia:add_table_copy(?CONVERSATION_TABLE_ID, node(), ram_copies).
 
 conversation_exists({Conversation, []}, Type) ->
-    FindFun = fun() ->
-        case mnesia:match_object(?CONVERSATION_TABLE_ID, {?CONVERSATION_RECORD, {Conversation, '_'}, Type}, read) of            
-            [{?CONVERSATION_RECORD, {Conversation, Connection}, _}] ->
-                {true, Connection};
-            _ -> {false, []}
-        end
-    end,
-    {_, Results} = mnesia:transaction(FindFun),
-    Results;
+    find_conversation({?CONVERSATION_RECORD, {Conversation, '_'}, Type});
 conversation_exists({Conversation, Connection}, Type) ->
-    FindFun = fun() ->
-        case mnesia:match_object(?CONVERSATION_TABLE_ID, {?CONVERSATION_RECORD, {Conversation, Connection}, Type}, read) of
-            [{?CONVERSATION_RECORD, {Conversation, Connection}, _}] ->
-                {true, Connection};
-            _ -> 
-                {false, []}
-        end
-    end,
-    {_, Results} = mnesia:transaction(FindFun),
-    Results.
+    find_conversation({?CONVERSATION_RECORD, {Conversation, Connection}, Type}).
 
 finalize() ->
     mnesia:stop().
@@ -65,7 +48,7 @@ find(Key) ->
         mnesia:match_object(?RESOURCE_TABLE_ID, {?RESOURCE_RECORD, Key, '_'}, read)
     end,
     { atomic, [Result | _ ] } = mnesia:transaction(ReadFun),
-    Result#resource_record.value.
+    Result#?RESOURCE_RECORD.value.
 
 find_all(Key) ->
     ReadFun = fun() ->
@@ -81,7 +64,7 @@ initialize_connection(Connection, Resources) ->
 
 insert({Connection, Key}, Value) ->
     InsertFun = fun() ->
-        ok = mnesia:write(#resource_record{key = {Connection, Key}, value = Value})
+        ok = mnesia:write(#?RESOURCE_RECORD{key = {Connection, Key}, value = Value})
     end,
     {atomic, Results} = mnesia:transaction(InsertFun),
     Results.
@@ -95,6 +78,17 @@ remove_conversation(Conversation, Connection) ->
 
     
 %%% Local functions
+find_conversation(Record) ->
+    FindFun = fun() ->
+        case mnesia:match_object(?CONVERSATION_TABLE_ID, Record, read) of
+            [{?CONVERSATION_RECORD, {Conversation, Connection}, _}] ->
+                {true, Connection};
+            _ -> {false, []}
+        end
+    end,
+    {_, Results} = mnesia:transaction(FindFun),
+    Results.
+    
 get_connection_from_record(Record) ->
-    {Connection, _} = Record#resource_record.key,
+    {Connection, _} = Record#?RESOURCE_RECORD.key,
     Connection.
