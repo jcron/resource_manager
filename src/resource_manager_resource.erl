@@ -46,12 +46,7 @@ from_url_encoded(ReqData, State) ->
     to_json(ReqData, State).
 
 show_resources(ReqData, State) ->
-    case get_connection(ReqData, []) of
-        undefined -> all_resources(ReqData, State);
-        Connection ->
-            ConnectionStruct = get_connections_json([Connection], []),
-            encode_to_json(ReqData, State, rm_json:connections(ConnectionStruct))
-    end.
+    show_resources(ReqData, State, get_connection(ReqData, [])).
 
 %%% Local Functions
 all_resources(ReqData, State) ->
@@ -83,13 +78,15 @@ get_conversation(ReqData, ?JSON_DATA) ->
 get_conversation(ReqData, ?FORM_DATA) ->
     get_url_encoded_value(ReqData, "id").
 
+get_json_content_value(undefined) ->
+    [];
+get_json_content_value(Value) ->
+    binary_to_list(Value).
+
 get_json_content_value(ReqData, Key) ->
     Body = wrq:req_body(ReqData),
     {struct, Json} = mochijson2:decode(Body),
-    case proplists:get_value(Key, Json) of
-        undefined -> [];
-        Value -> binary_to_list(Value)
-    end.
+    get_json_content_value(proplists:get_value(Key, Json)).
 
 get_connection(ReqData, ContentType) ->
     get_connection(ReqData, wrq:method(ReqData), ContentType).
@@ -108,12 +105,14 @@ get_connections_json([Connection | Connections], JsonStruct) ->
     Available = rm_librarian:get_available_resources(Connection),
     get_connections_json(Connections, [rm_json:connection_detail(Connection, Total, Available) | JsonStruct]).
 
+get_url_encoded_value(false) ->
+    [];
+get_url_encoded_value({_, Value}) ->
+    Value.
+    
 get_url_encoded_value(ReqData, Key) ->
     Body = mochiweb_util:parse_qs(wrq:req_body(ReqData)),
-    case lists:keyfind(Key, 1, Body) of
-        false -> [];
-        {Key, Value} -> Value
-    end.
+    get_url_encoded_value(lists:keyfind(Key, 1, Body)).
 
 json_response(ReqData, State, Response) ->
     ReturnIo = mochijson2:encode(Response),
@@ -130,6 +129,12 @@ parse_input_data(ReqData) ->
     Conversation = get_conversation(ReqData, ContentType),
     Action = wrq:path_info(action, ReqData),
     {Action, Connection, Conversation}.
+
+show_resources(ReqData, State, undefined) ->
+    all_resources(ReqData, State);
+show_resources(ReqData, State, Connection) ->
+    ConnectionStruct = get_connections_json([Connection], []),
+    encode_to_json(ReqData, State, rm_json:connections(ConnectionStruct)).
 
 to_json(ReqData, State) ->
     try
