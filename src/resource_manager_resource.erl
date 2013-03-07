@@ -136,14 +136,17 @@ show_resources(ReqData, State, Connection) ->
     ConnectionStruct = get_connections_json([Connection], []),
     encode_to_json(ReqData, State, rm_json:connections(ConnectionStruct)).
 
+take_action("checkout", ReqData, State, Connection, Conversation) ->
+    checkout_resource(ReqData, State, Connection, Conversation);
+take_action("checkin", ReqData, State, _Connection, Conversation) ->
+    checkin_resource(ReqData, State, Conversation);
+take_action(_Action, ReqData, State, _Connection, _Conversation) ->
+    bad_request(ReqData, State).
+
 to_json(ReqData, State) ->
     try
         {Action, Connection, Conversation} = parse_input_data(ReqData),
-        case Action of
-            "checkout" -> checkout_resource(ReqData, State, Connection, Conversation);
-            "checkin"   -> checkin_resource(ReqData, State, Conversation);
-            _              -> bad_request(ReqData, State)
-        end
+        take_action(Action, ReqData, State, Connection, Conversation)
     catch
         no_resource -> no_resource(ReqData, State);
         _Error:_Reason -> {false, ReqData, State}
