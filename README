@@ -1,3 +1,9 @@
+resource_manager
+
+Erlang RESTful (ish) resource manager built with webmachine
+
+-------------------------------------------------------
+
 Project Skeleton for the resource_manager app.
 
 You should find in this directory:
